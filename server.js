@@ -13,6 +13,7 @@ let scores = [];
 
 // 🤖 AI Quiz
 app.get("/quiz", async (req, res) => {
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method:"POST",
         headers:{
@@ -21,12 +22,28 @@ app.get("/quiz", async (req, res) => {
         },
         body:JSON.stringify({
             model:"gpt-4o-mini",
-            messages:[{role:"user",content:"Generate 5 MCQ questions on C programming JSON format"}]
+            messages:[{
+                role:"user",
+                content:`Generate 5 MCQ questions in JSON only format like:
+[
+{"q":"question","options":["a","b","c"],"answer":1}
+]`
+            }]
         })
     });
 
     const data = await response.json();
-    res.json(data);
+
+    let text = data.choices[0].message.content;
+
+    try {
+        let json = JSON.parse(text);
+        res.json(json);
+    } catch {
+        res.json([
+            {"q":"Fallback: Father of C?","options":["Dennis","Ken","James"],"answer":1}
+        ]);
+    }
 });
 
 // 💾 Save Score
