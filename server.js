@@ -13,39 +13,48 @@ let scores = [];
 
 // 🤖 AI Quiz
 app.get("/quiz", async (req, res) => {
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method:"POST",
-        headers:{
-            "Authorization":`Bearer ${process.env.API_KEY}`,
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            model:"gpt-4o-mini",
-            messages:[{
-                role:"user",
-                content:`Generate 5 MCQ questions in JSON only format like:
-[
-{"q":"question","options":["a","b","c"],"answer":1}
-]`
-            }]
-        })
-    });
-
-    const data = await response.json();
-
-    let text = data.choices[0].message.content;
-
     try {
-        let json = JSON.parse(text);
+
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method:"POST",
+            headers:{
+                "Authorization":`Bearer ${process.env.API_KEY}`,
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                model:"gpt-4o-mini",
+                messages:[{
+                    role:"user",
+                    content:`Generate 5 MCQ questions in JSON array format:
+[
+{"q":"question","options":["a","b","c","d"],"answer":1}
+]`
+                }]
+            })
+        });
+
+        const data = await response.json();
+
+        let text = data.choices[0].message.content;
+
+        let json;
+
+        try {
+            json = JSON.parse(text);
+        } catch {
+            json = [
+                {"q":"Father of C language?","options":["Dennis","James","Ken","Bjarne"],"answer":1}
+            ];
+        }
+
         res.json(json);
-    } catch {
+
+    } catch(err){
         res.json([
-            {"q":"Fallback: Father of C?","options":["Dennis","Ken","James"],"answer":1}
+            {"q":"Fallback Question","options":["A","B","C","D"],"answer":1}
         ]);
     }
 });
-
 // 💾 Save Score
 app.post("/score",(req,res)=>{
     scores.push(req.body);
