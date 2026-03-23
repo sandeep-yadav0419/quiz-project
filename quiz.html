@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html>
+<head>
+<title>AI Quiz 🔥</title>
+</head>
+
 <body style="background:#141e30;color:white;text-align:center;">
 
 <h1>🔥 AI Quiz</h1>
@@ -10,24 +14,78 @@
 <div id="quiz"></div>
 
 <script>
+
+let questions = [];
+let i = 0;
+let score = 0;
+let name = "";
+
 async function start(){
 
-name = document.getElementById("name").value;
+    console.log("Start clicked"); // 🔥 DEBUG
 
-if(name==""){
-  alert("Enter name bro 😅");
-  return;
+    name = document.getElementById("name").value;
+
+    if(name==""){
+        alert("Enter name bro 😅");
+        return;
+    }
+
+    try {
+
+        let res = await fetch("/quiz");
+        let data = await res.json();
+
+        console.log(data); // 🔥 DEBUG
+
+        questions = data;
+
+        i = 0;
+        score = 0;
+
+        show();
+
+    } catch(err){
+        alert("Error aa gaya 😭");
+        console.log(err);
+    }
 }
 
-let res = await fetch("/quiz");
-let data = await res.json();
+function show(){
 
-questions = data;   // ✅ FIXED LINE
+    let q = questions[i];
 
-i = 0;
-score = 0;
+    let html = `<h3>${q.q}</h3>`;
 
-show();
+    q.options.forEach((o,idx)=>{
+        html += `<button onclick="ans(${idx+1})">${o}</button><br>`;
+    });
+
+    document.getElementById("quiz").innerHTML = html;
+}
+
+function ans(a){
+
+    if(a == questions[i].answer) score++;
+
+    i++;
+
+    if(i < questions.length){
+        show();
+    } else {
+        finish();
+    }
+}
+
+async function finish(){
+
+    document.getElementById("quiz").innerHTML = "Score: " + score;
+
+    await fetch("/score",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name,score})
+    });
 }
 
 </script>
