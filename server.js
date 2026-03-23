@@ -13,6 +13,7 @@ let scores = [];
 
 // 🤖 AI Quiz
 app.get("/quiz", async (req, res) => {
+
     try {
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -25,33 +26,42 @@ app.get("/quiz", async (req, res) => {
                 model:"gpt-4o-mini",
                 messages:[{
                     role:"user",
-                    content:`Generate 5 MCQ questions in JSON array format:
+                    content:`ONLY give JSON. No text.
+
+Format:
 [
-{"q":"question","options":["a","b","c","d"],"answer":1}
-]`
+{"q":"Question","options":["A","B","C","D"],"answer":1}
+]
+
+Topic: C Programming`
                 }]
             })
         });
 
         const data = await response.json();
 
-        let text = data.choices[0].message.content;
+        let text = data.choices?.[0]?.message?.content || "";
 
-        let json;
+        // 🔥 CLEAN TEXT
+        text = text.replace(/```json/g,"").replace(/```/g,"").trim();
+
+        let questions;
 
         try {
-            json = JSON.parse(text);
+            questions = JSON.parse(text);
         } catch {
-            json = [
-                {"q":"Father of C language?","options":["Dennis","James","Ken","Bjarne"],"answer":1}
+            console.log("Parse error:", text);
+            questions = [
+                {"q":"Fallback: Father of C?","options":["Dennis","Ken","James","Bjarne"],"answer":1}
             ];
         }
 
-        res.json(json);
+        res.json(questions);
 
     } catch(err){
+        console.log(err);
         res.json([
-            {"q":"Fallback Question","options":["A","B","C","D"],"answer":1}
+            {"q":"Server Error","options":["A","B","C","D"],"answer":1}
         ]);
     }
 });
