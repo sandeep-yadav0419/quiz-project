@@ -10,51 +10,24 @@
 <div id="quiz"></div>
 
 <script>
-
-let questions=[],i=0,score=0,name="";
-
 async function start(){
-name=document.getElementById("name").value;
 
-let res=await fetch("/quiz");
-let data=await res.json();
+name = document.getElementById("name").value;
 
-questions = data;
+if(name==""){
+  alert("Enter name bro 😅");
+  return;
+}
+
+let res = await fetch("/quiz");
+let data = await res.json();
+
+questions = data;   // ✅ FIXED LINE
+
+i = 0;
+score = 0;
+
 show();
-}
-
-function show(){
-let q=questions[i];
-
-let html=`<h3>${q.q}</h3>`;
-q.options.forEach((o,idx)=>{
-html+=`<button onclick="ans(${idx+1})">${o}</button><br>`;
-});
-
-document.getElementById("quiz").innerHTML=html;
-}
-
-function ans(a){
-if(a==questions[i].answer) score++;
-
-i++;
-
-if(i<questions.length){
-show();
-}else{
-finish();
-}
-}
-
-async function finish(){
-
-document.getElementById("quiz").innerHTML="Score: "+score;
-
-await fetch("/score",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({name,score})
-});
 }
 
 </script>
