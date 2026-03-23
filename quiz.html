@@ -22,7 +22,7 @@ let name = "";
 
 async function start(){
 
-    console.log("Start clicked"); // 🔥 DEBUG
+    console.log("Start clicked");
 
     name = document.getElementById("name").value;
 
@@ -36,7 +36,13 @@ async function start(){
         let res = await fetch("/quiz");
         let data = await res.json();
 
-        console.log(data); // 🔥 DEBUG
+        console.log("API DATA:", data);
+
+        // 🔥 IMPORTANT FIX
+        if(!data || data.length === 0){
+            alert("Questions load nahi hue 😭");
+            return;
+        }
 
         questions = data;
 
@@ -46,12 +52,18 @@ async function start(){
         show();
 
     } catch(err){
-        alert("Error aa gaya 😭");
+        alert("Server error 😭");
         console.log(err);
     }
 }
 
 function show(){
+
+    // 🔥 SAFETY CHECK
+    if(!questions[i]){
+        document.getElementById("quiz").innerHTML = "No questions 😭";
+        return;
+    }
 
     let q = questions[i];
 
@@ -79,7 +91,7 @@ function ans(a){
 
 async function finish(){
 
-    document.getElementById("quiz").innerHTML = "Score: " + score;
+    document.getElementById("quiz").innerHTML = "<h2>Score: " + score + "</h2>";
 
     await fetch("/score",{
         method:"POST",
