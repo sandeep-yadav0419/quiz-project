@@ -19,8 +19,7 @@ name=document.getElementById("name").value;
 let res=await fetch("/quiz");
 let data=await res.json();
 
-questions=eval(data.choices[0].message.content);
-
+questions = data;
 show();
 }
 
