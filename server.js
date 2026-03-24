@@ -12,8 +12,11 @@ app.get("/", (req,res)=>{
 app.get("/quiz", async (req,res)=>{
 
     const level = req.query.level || "easy";
+    const count = req.query.count || 10; // 🔥 jitne questions chahiye
 
-    const prompt = `Generate 10 MCQ questions (JSON only)
+    const prompt = `Return ONLY JSON array (no text)
+
+Generate ${count} MCQ questions
 Difficulty: ${level}
 
 Format:
@@ -36,29 +39,38 @@ Format:
     });
 
     const data = await response.json();
-    let text = data.choices[0].message.content;
 
-    text = text.replace(/```json/g,"").replace(/```/g,"").trim();
+    let text = data.choices?.[0]?.message?.content || "";
+
+    console.log("RAW AI:", text); // debug
+
+    // 🔥 CLEAN AI OUTPUT
+    text = text.replace(/```json/g,"")
+               .replace(/```/g,"")
+               .trim();
 
     let questions;
 
     try{
         questions = JSON.parse(text);
     }catch{
+        console.log("Parse failed");
+
         questions = [
-            {"q":"Fallback: Father of C?","options":["Dennis","Ken","James","Bjarne"],"answer":1}
+            {"q":"Fallback: Father of C?","options":["Dennis","Ken","James","Bjarne"],"answer":1},
+            {"q":"Keyword for loop?","options":["for","loop","repeat","do"],"answer":1}
         ];
     }
 
     res.json(questions);
 
-    }catch{
+    }catch(err){
+        console.log(err);
         res.json([
             {"q":"Server error","options":["A","B","C","D"],"answer":1}
         ]);
     }
 });
-
 app.post("/score",(req,res)=>{
     const {name,score} = req.body;
     fs.appendFileSync("leaderboard.txt",`${name} - ${score}\n`);
