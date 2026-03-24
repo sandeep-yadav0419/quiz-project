@@ -5,6 +5,9 @@ const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
 
+console.log("STATUS:", response.status);
+console.log("FULL:", data);
+
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/quiz.html");
 });
