@@ -1,123 +1,150 @@
-const express = require("express");
-const fs = require("fs");
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Quiz</title>
+<style>
+body{background:#0f172a;color:white;text-align:center;font-family:Arial;}
+button{padding:10px;margin:5px;border:none;border-radius:8px;}
+.option{display:block;margin:10px auto;width:200px;background:#1e293b;color:white;}
+.correct{background:green;}
+.wrong{background:red;}
+#chatbox{position:fixed;bottom:10px;right:10px;width:280px;height:350px;background:#1e293b;border-radius:10px;display:flex;flex-direction:column;}
+#chatMessages{flex:1;overflow:auto;padding:10px;text-align:left;}
+.msg{padding:8px;margin:5px;border-radius:8px;max-width:80%;}
+.user{background:#3b82f6;align-self:flex-end;}
+.bot{background:#374151;}
+</style>
+</head>
+<body>
 
-const app = express();
-app.use(express.json());
-app.use(express.static(__dirname));
+<h1>🎮 AI Quiz</h1>
 
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/quiz.html");
+<input id="name" placeholder="Enter name">
+<br><br>
+
+<select id="level">
+<option value="easy">Easy</option>
+<option value="medium">Medium</option>
+<option value="hard">Hard</option>
+</select>
+
+<button onclick="startQuiz()">Start 🚀</button>
+
+<div id="timer">⏳ 10</div>
+<div style="width:200px;background:#333;margin:auto;">
+<div id="bar" style="height:10px;background:lime;width:100%"></div>
+</div>
+
+<h2 id="question"></h2>
+<div id="options"></div>
+<h3 id="score"></h3>
+
+<button onclick="loadLeaderboard()">Leaderboard 🏆</button>
+<pre id="leaderboard"></pre>
+
+<!-- SOUND -->
+<audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+<audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+
+<!-- CHAT -->
+<div id="chatbox">
+<div id="chatMessages"></div>
+<input id="chatInput">
+<button onclick="sendChat()">Send</button>
+</div>
+
+<script>
+let q=[],i=0,s=0,time=10,timer;
+
+async function startQuiz(){
+let level=document.getElementById("level").value;
+let res=await fetch(`/quiz?level=${level}`);
+q=await res.json();
+i=0;s=0;
+loadQ();
+}
+
+function loadQ(){
+if(i>=q.length){showScore();return;}
+time=10;startTimer();
+document.getElementById("question").innerText=q[i].q;
+let op=document.getElementById("options");op.innerHTML="";
+q[i].options.forEach((o,idx)=>{
+let b=document.createElement("button");
+b.innerText=o;b.className="option";
+b.onclick=()=>check(idx,b);
+op.appendChild(b);
 });
+}
 
-// ✅ C LANGUAGE QUIZ
-app.get("/quiz", (req, res) => {
+function check(idx,b){
+clearInterval(timer);
+if(idx===q[i].answer){
+b.classList.add("correct");
+document.getElementById("correctSound").play();
+s++;
+}else{
+b.classList.add("wrong");
+document.getElementById("wrongSound").play();
+}
+setTimeout(()=>{i++;loadQ();},800);
+}
 
-    const level = req.query.level || "easy";
+function startTimer(){
+timer=setInterval(()=>{
+time--;
+document.getElementById("timer").innerText="⏳ "+time;
+document.getElementById("bar").style.width=(time*10)+"%";
+if(time<=0){clearInterval(timer);i++;loadQ();}
+},1000);
+}
 
-    let questions = [];
+function showScore(){
+let name=document.getElementById("name").value||"Guest";
+fetch("/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,score:s})});
+document.getElementById("score").innerText="Score: "+s;
+}
 
-    // 🟢 EASY
-    if (level === "easy") {
-        questions = [
-            {
-                q: "Who is the father of C language?",
-                options: ["Dennis Ritchie", "James Gosling", "Bjarne Stroustrup", "Guido van Rossum"],
-                answer: 0
-            },
-            {
-                q: "Which symbol is used for comments in C?",
-                options: ["//", "#", "<!-- -->", "**"],
-                answer: 0
-            },
-            {
-                q: "Which header file is used for printf?",
-                options: ["stdio.h", "conio.h", "math.h", "stdlib.h"],
-                answer: 0
-            },
-            {
-                q: "C language is?",
-                options: ["High level", "Low level", "Both", "None"],
-                answer: 2
-            },
-            {
-                q: "Which keyword is used to define a constant?",
-                options: ["const", "var", "let", "static"],
-                answer: 0
-            }
-        ];
-    }
+async function loadLeaderboard(){
+let res=await fetch("/leaderboard");
+let data=await res.text();
+document.getElementById("leaderboard").innerText=data;
+}
 
-    // 🟡 MEDIUM
-    else if (level === "medium") {
-        questions = [
-            {
-                q: "What is the size of int in C?",
-                options: ["2 bytes", "4 bytes", "Depends on compiler", "8 bytes"],
-                answer: 2
-            },
-            {
-                q: "Which operator is used to access value at address?",
-                options: ["*", "&", "%", "#"],
-                answer: 0
-            },
-            {
-                q: "Which loop is guaranteed to execute at least once?",
-                options: ["for", "while", "do-while", "none"],
-                answer: 2
-            },
-            {
-                q: "Which function is used to allocate memory?",
-                options: ["malloc()", "alloc()", "new()", "create()"],
-                answer: 0
-            },
-            {
-                q: "Which keyword is used to exit a loop?",
-                options: ["stop", "break", "exit", "end"],
-                answer: 1
-            }
-        ];
-    }
+// CHATBOT
+function sendChat(){
+let msg=document.getElementById("chatInput").value;
+add(msg,"user");
+typing();
 
-    // 🔴 HARD
-    else if (level === "hard") {
-        questions = [
-            {
-                q: "What is dangling pointer?",
-                options: ["Pointer not initialized", "Pointer pointing to freed memory", "Null pointer", "None"],
-                answer: 1
-            },
-            {
-                q: "Which storage class has maximum scope?",
-                options: ["auto", "register", "static", "extern"],
-                answer: 3
-            },
-            {
-                q: "What will sizeof(char) return?",
-                options: ["1", "2", "4", "Depends"],
-                answer: 0
-            },
-            {
-                q: "Which function is used to free memory?",
-                options: ["delete()", "remove()", "free()", "clear()"],
-                answer: 2
-            },
-            {
-                q: "What is recursion?",
-                options: ["Loop", "Function calling itself", "Pointer", "Array"],
-                answer: 1
-            }
-        ];
-    }
+setTimeout(()=>{
+let r=reply(msg.toLowerCase());
+add(r,"bot");
+speak(r);
+},1000);
+}
 
-    res.json(questions);
-});
+function add(text,type){
+let d=document.createElement("div");
+d.className="msg "+type;
+d.innerText=text;
+document.getElementById("chatMessages").appendChild(d);
+}
 
-// leaderboard
-app.post("/score", (req, res) => {
-    const { name, score } = req.body;
-    fs.appendFileSync("leaderboard.txt", `${name} - ${score}\n`);
-    res.send("saved");
-});
+function typing(){add("typing...","bot");}
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running 🚀"));
+function reply(m){
+if(m.includes("hi")) return "Hello 😄";
+if(m.includes("c")) return "C is programming language 💻";
+if(m.includes("loop")) return "Loop repeats 🔁";
+return "Interesting 🤔";
+}
+
+function speak(t){
+let s=new SpeechSynthesisUtterance(t);
+speechSynthesis.speak(s);
+}
+</script>
+
+</body>
+</html>
