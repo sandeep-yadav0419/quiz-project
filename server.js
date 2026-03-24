@@ -100,3 +100,30 @@ app.get("/leaderboard", (req, res) => {
 // START SERVER
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("🚀 Server running on port " + PORT));
+
+// 🤖 CHATBOT API
+app.post("/chat", (req, res) => {
+    const msg = req.body.message.toLowerCase();
+
+    let reply = "Hmm 🤔 I’m still learning. Try asking about C language!";
+
+    if (msg.includes("hi") || msg.includes("hello"))
+        reply = "Hey 👋 I'm your AI assistant!";
+
+    else if (msg.includes("c"))
+        reply = "C is a powerful low-level programming language 💻";
+
+    else if (msg.includes("loop"))
+        reply = "Loops repeat instructions 🔁 like for, while, do-while";
+
+    else if (msg.includes("pointer"))
+        reply = "Pointer stores memory address 📍";
+
+    else if (msg.includes("score"))
+        reply = "Complete the quiz to see your score 🎯";
+
+    else if (msg.includes("bye"))
+        reply = "Goodbye 👋 See you soon!";
+
+    res.json({ reply });
+});
