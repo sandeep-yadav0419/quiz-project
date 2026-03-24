@@ -2,8 +2,7 @@ const express = require("express");
 const fs = require("fs");
 
 // ✅ fetch fix (important for Node)
-const fetch = (...args) =>
-  import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const response = await fetch("https://api.openai.com/v1/chat/completions", {
 
 const app = express();
 app.use(express.json());
