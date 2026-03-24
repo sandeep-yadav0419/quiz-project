@@ -1,23 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-<h2>Login</h2>
-<input id="name" placeholder="Enter name"><br><br>
-<button onclick="login()">Start</button>
+    <h2>🏆 Leaderboard</h2>
+
+    <pre id="data">Loading...</pre>
+
+    <br>
+    <button onclick="goBack()">⬅ Back to Quiz</button>
 </div>
 
 <script>
-function login(){
- let name=document.getElementById("name").value;
- if(!name) return alert("Enter name");
- localStorage.setItem("user",name);
- window.location="quiz.html";
+// load leaderboard
+async function loadLeaderboard(){
+    try {
+        let res = await fetch("/leaderboard");
+        let text = await res.text();
+
+        document.getElementById("data").innerText = text || "No scores yet";
+    } catch (err) {
+        document.getElementById("data").innerText = "Error loading leaderboard";
+    }
 }
+
+// back button
+function goBack(){
+    window.location = "quiz.html";
+}
+
+// auto load
+loadLeaderboard();
 </script>
 
 </body>
