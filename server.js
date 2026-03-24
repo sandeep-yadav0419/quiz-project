@@ -26,9 +26,8 @@ app.get("/quiz", async (req, res) => {
                 model:"gpt-4o-mini",
                 messages:[{
                     role:"user",
-                    content:`ONLY give JSON. No text.
+                    content:`Give ONLY JSON array (no text)
 
-Format:
 [
 {"q":"Question","options":["A","B","C","D"],"answer":1}
 ]
@@ -42,7 +41,7 @@ Topic: C Programming`
 
         let text = data.choices?.[0]?.message?.content || "";
 
-        // 🔥 CLEAN TEXT
+        // 🔥 CLEAN AI OUTPUT
         text = text.replace(/```json/g,"").replace(/```/g,"").trim();
 
         let questions;
