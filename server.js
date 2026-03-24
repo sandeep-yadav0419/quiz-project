@@ -14,16 +14,17 @@ app.get("/quiz", async (req, res) => {
     const level = req.query.level || "easy";
     const count = req.query.count || 5;
 
-    const prompt = `
-Generate ${count} MCQ questions.
+const prompt = `
+Generate ${count} UNIQUE MCQ questions.
 
-Return ONLY JSON:
+Return ONLY JSON array. No explanation.
 
+Example:
 [
   {
-    "q": "Question?",
-    "options": ["A","B","C","D"],
-    "answer": 0
+    "q": "What is 2+2?",
+    "options": ["1","2","3","4"],
+    "answer": 3
   }
 ]
 `;
@@ -99,6 +100,7 @@ app.post("/score", (req, res) => {
     const { name, score } = req.body;
     fs.appendFileSync("leaderboard.txt", `${name} - ${score}\n`);
     res.send("saved");
+    console.log("RAW:", text);
 });
 
 const PORT = process.env.PORT || 3000;
