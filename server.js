@@ -3,14 +3,17 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-app.use(express.json());
-app.use(express.static("public"));
 
+// middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// ✅ HOME ROUTE (FIXED PROPERLY)
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/login.html"));
+    res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// QUIZ API (10 QUESTIONS PER LEVEL)
+// ✅ QUIZ API (10 QUESTIONS PER LEVEL)
 app.get("/quiz", (req, res) => {
     const level = req.query.level || "easy";
 
@@ -56,22 +59,23 @@ app.get("/quiz", (req, res) => {
     res.json(questions[level]);
 });
 
-// SAVE SCORE
+// ✅ SAVE SCORE
 app.post("/score", (req, res) => {
     const { name, score } = req.body;
     fs.appendFileSync("leaderboard.txt", `${name} - ${score}\n`);
     res.send("saved");
 });
 
-// LEADERBOARD
+// ✅ LEADERBOARD
 app.get("/leaderboard", (req, res) => {
-    let data = "";
     try {
-        data = fs.readFileSync("leaderboard.txt","utf-8");
+        const data = fs.readFileSync("leaderboard.txt", "utf-8");
+        res.send(data || "No scores yet");
     } catch {
-        data = "No scores yet";
+        res.send("No scores yet");
     }
-    res.send(data);
 });
 
-app.listen(process.env.PORT || 3000, () => console.log("🚀 Server running"));
+// ✅ START SERVER
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("🚀 Server running on port " + PORT));
