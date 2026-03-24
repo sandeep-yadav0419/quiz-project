@@ -1,163 +1,175 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>AI Quiz Pro 🔥</title>
+    <title>AI Quiz</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            background: #0f172a;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            border: none;
+        }
+        .option {
+            display: block;
+            margin: 10px auto;
+            width: 200px;
+            background: #1e293b;
+            color: white;
+        }
+        .correct { background: green !important; }
+        .wrong { background: red !important; }
 
-<style>
-body{
-background:linear-gradient(135deg,#1d2671,#c33764);
-font-family:sans-serif;
-text-align:center;
-color:white;
-}
+        #timer {
+            font-size: 20px;
+            margin: 10px;
+        }
 
-.box{
-margin-top:80px;
-background:rgba(0,0,0,0.6);
-padding:30px;
-border-radius:15px;
-width:400px;
-margin:auto;
-box-shadow:0 0 20px black;
-}
-
-button{
-padding:10px 20px;
-margin:5px;
-border:none;
-border-radius:10px;
-background:#00c6ff;
-color:white;
-cursor:pointer;
-}
-
-button:hover{background:#0072ff;}
-
-.progress{
-height:10px;
-background:#444;
-margin:10px;
-border-radius:10px;
-}
-
-.bar{
-height:10px;
-background:#00ff99;
-width:0%;
-border-radius:10px;
-}
-</style>
-
+        #chatbox {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 250px;
+            background: #1e293b;
+            padding: 10px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="box">
-
-<h2>🎮 AI Quiz</h2>
-
-<input id="name" placeholder="Enter Name"><br>
+<h1>🎮 AI Quiz</h1>
 
 <select id="level">
-<option value="easy">Easy</option>
-<option value="medium">Medium</option>
-<option value="hard">Hard</option>
-</select><br>
+    <option value="easy">Easy</option>
+    <option value="medium">Medium</option>
+    <option value="hard">Hard</option>
+</select>
 
-<button onclick="start()">Start 🚀</button>
+<button onclick="startQuiz()">Start 🚀</button>
 
-<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="timer">⏳ 10</div>
+<h2 id="question"></h2>
+<div id="options"></div>
 
-<h3 id="timer"></h3>
+<h3 id="score"></h3>
 
-<div id="quiz"></div>
-
+<!-- 🤖 CHATBOT -->
+<div id="chatbox">
+    <h4>🤖 Chatbot</h4>
+    <input id="chatInput" placeholder="Ask something..." />
+    <button onclick="sendChat()">Send</button>
+    <p id="chatResponse"></p>
 </div>
 
-<audio id="clickSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
-
 <script>
+let questions = [];
+let index = 0;
+let score = 0;
+let time = 10;
+let timer;
 
-let questions=[],i=0,score=0,name="",timer;
+async function startQuiz() {
+    const level = document.getElementById("level").value;
+    const res = await fetch(`/quiz?level=${level}`);
+    questions = await res.json();
 
-async function start(){
+    index = 0;
+    score = 0;
 
-name=document.getElementById("name").value;
-let level=document.getElementById("level").value;
-
-if(name==""){alert("Enter name");return;}
-
-let res=await fetch(`/quiz?level=${level}`);
-questions=await res.json();
-
-i=0;score=0;
-
-show();
+    loadQuestion();
 }
 
-function show(){
+function loadQuestion() {
+    if (index >= questions.length) {
+        showScore();
+        return;
+    }
 
-document.getElementById("bar").style.width = ((i/10)*100)+"%";
+    time = 10;
+    startTimer();
 
-let q=questions[i];
+    let q = questions[index];
+    document.getElementById("question").innerText = `Q${index+1}: ${q.q}`;
 
-let html=`<h3>Q${i+1}: ${q.q}</h3>`;
+    let optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
 
-q.options.forEach((o,idx)=>{
-html+=`<button onclick="ans(${idx+1})">${o}</button><br>`;
-});
+    q.options.forEach((opt, i) => {
+        let btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.className = "option";
 
-document.getElementById("quiz").innerHTML=html;
+        btn.onclick = () => checkAnswer(i, btn);
 
-startTimer();
+        optionsDiv.appendChild(btn);
+    });
 }
 
-function ans(a){
+function checkAnswer(i, btn) {
+    clearInterval(timer);
 
-document.getElementById("clickSound").play();
+    if (i === questions[index].answer) {
+        btn.classList.add("correct");
+        score++;
+    } else {
+        btn.classList.add("wrong");
+    }
 
-clearInterval(timer);
-
-if(a==questions[i].answer) score++;
-
-i++;
-
-if(i<questions.length){
-show();
-}else{
-finish();
-}
-}
-
-function startTimer(){
-
-let t=10;
-document.getElementById("timer").innerText="⏳ "+t;
-
-timer=setInterval(()=>{
-t--;
-document.getElementById("timer").innerText="⏳ "+t;
-
-if(t==0){
-clearInterval(timer);
-i++;
-show();
-}
-},1000);
+    setTimeout(() => {
+        index++;
+        loadQuestion();
+    }, 800);
 }
 
-function finish(){
+// ⏳ TIMER
+function startTimer() {
+    document.getElementById("timer").innerText = `⏳ ${time}`;
+    clearInterval(timer);
 
-document.getElementById("quiz").innerHTML=
-`<h2>🏆 Score: ${score}/10</h2>`;
+    timer = setInterval(() => {
+        time--;
+        document.getElementById("timer").innerText = `⏳ ${time}`;
 
-fetch("/score",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({name,score})
-});
+        if (time <= 0) {
+            clearInterval(timer);
+            index++;
+            loadQuestion();
+        }
+    }, 1000);
 }
 
+// 🎯 SCORE ANIMATION
+function showScore() {
+    let s = 0;
+    let final = score;
+
+    let interval = setInterval(() => {
+        document.getElementById("score").innerText = `Score: ${s}`;
+        s++;
+        if (s > final) clearInterval(interval);
+    }, 100);
+}
+
+// 🤖 SIMPLE CHATBOT (STATIC)
+function sendChat() {
+    let msg = document.getElementById("chatInput").value;
+    let response = "I am a quiz bot 🤖";
+
+    if (msg.toLowerCase().includes("c")) {
+        response = "C is a programming language 💻";
+    } else if (msg.toLowerCase().includes("loop")) {
+        response = "Loops are used for repetition 🔁";
+    }
+
+    document.getElementById("chatResponse").innerText = response;
+}
 </script>
 
 </body>
