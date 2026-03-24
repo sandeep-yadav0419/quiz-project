@@ -1,11 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>AI Quiz Pro</title>
 <link rel="stylesheet" href="style.css">
+<style>
+body{
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    font-family: Arial;
+    color:white;
+}
+
+.container{
+    width: 420px;
+    margin: auto;
+    margin-top: 40px;
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+h2,h3{text-align:center;}
+
+button{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{transform:scale(1.05);}
+
+.option{background:#1f1f1f;color:white;}
+.option:hover{background:#333;}
+
+.correct{background:green !important;}
+.wrong{background:red !important;}
+
+.chat{
+    position:fixed;
+    bottom:10px;
+    right:10px;
+    width:280px;
+    background:#111;
+    border-radius:10px;
+    padding:10px;
+}
+
+.chat-messages{
+    height:150px;
+    overflow:auto;
+    font-size:14px;
+}
+
+.msg{
+    padding:5px;
+    margin:3px;
+    border-radius:5px;
+}
+
+.user{background:#007bff;}
+.bot{background:#444;}
+
+input{
+    width:70%;
+    padding:5px;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
+<h2>🎮 AI Quiz Pro</h2>
+
 <h3 id="user"></h3>
 
 <select id="level">
@@ -14,21 +86,23 @@
 <option value="hard">Hard</option>
 </select>
 
-<button onclick="start()">Start</button>
+<button onclick="start()">🚀 Start Quiz</button>
 
 <h3 id="timer"></h3>
 <h2 id="q"></h2>
 <div id="opt"></div>
 
 <h3 id="score"></h3>
-<button onclick="loadLB()">Leaderboard</button>
+
+<button onclick="loadLB()">🏆 Leaderboard</button>
 <pre id="lb"></pre>
 </div>
 
 <!-- CHAT -->
 <div class="chat">
 <div class="chat-messages" id="chat"></div>
-<input id="msg"><button onclick="send()">Send</button>
+<input id="msg" placeholder="Ask something...">
+<button onclick="send()">Send</button>
 </div>
 
 <script>
@@ -36,65 +110,103 @@ document.getElementById("user").innerText="Welcome "+localStorage.getItem("user"
 
 let q=[],i=0,s=0,t;
 
+// START QUIZ
 async function start(){
 let level=document.getElementById("level").value;
 let res=await fetch(`/quiz?level=${level}`);
 q=await res.json();
-i=0;s=0;load();
+i=0;s=0;
+document.getElementById("score").innerText="";
+load();
 }
 
+// LOAD QUESTION
 function load(){
 if(i>=q.length){end();return;}
+
 let cur=q[i];
 document.getElementById("q").innerText=cur.q;
-let d=document.getElementById("opt");d.innerHTML="";
+
+let d=document.getElementById("opt");
+d.innerHTML="";
+
 cur.options.forEach((o,idx)=>{
 let b=document.createElement("button");
-b.innerText=o;b.className="option";
+b.innerText=o;
+b.className="option";
 b.onclick=()=>check(idx,b);
 d.appendChild(b);
 });
+
 timer();
 }
 
+// CHECK ANSWER
 function check(idx,b){
 clearInterval(t);
-if(idx===q[i].answer){b.classList.add("correct");s++;}
-else b.classList.add("wrong");
-setTimeout(()=>{i++;load();},700);
+
+if(idx===q[i].answer){
+b.classList.add("correct");
+s++;
+}else{
+b.classList.add("wrong");
 }
 
+setTimeout(()=>{
+i++;
+load();
+},800);
+}
+
+// TIMER
 function timer(){
 let time=10;
 t=setInterval(()=>{
 time--;
-document.getElementById("timer").innerText="⏳ "+time;
-if(time<=0){clearInterval(t);i++;load();}
+document.getElementById("timer").innerText="⏳ "+time+"s";
+
+if(time<=0){
+clearInterval(t);
+i++;
+load();
+}
 },1000);
 }
 
+// END QUIZ
 function end(){
 let name=localStorage.getItem("user");
-fetch("/score",{method:"POST",headers:{"Content-Type":"application/json"},
-body:JSON.stringify({name,score:s})});
-document.getElementById("score").innerText="Score: "+s;
+
+fetch("/score",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name,score:s})
+});
+
+document.getElementById("score").innerText="🎯 Final Score: "+s+" / "+q.length;
 }
 
+// LOAD LEADERBOARD
 async function loadLB(){
 let r=await fetch("/leaderboard");
 document.getElementById("lb").innerText=await r.text();
 }
 
-// CHATBOT
+// CHATBOT (UPGRADED)
 function send(){
 let msg=document.getElementById("msg").value;
+if(!msg) return;
+
 add(msg,"user");
+document.getElementById("msg").value="";
+
+typing();
 
 setTimeout(()=>{
 let reply=getReply(msg);
 add(reply,"bot");
 speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
-},800);
+},1000);
 }
 
 function add(t,type){
@@ -104,12 +216,22 @@ d.innerText=t;
 document.getElementById("chat").appendChild(d);
 }
 
+// typing animation
+function typing(){
+add("Typing...","bot");
+}
+
+// SMART REPLIES
 function getReply(m){
 m=m.toLowerCase();
-if(m.includes("hi")) return "Hello 👋";
-if(m.includes("c")) return "C is powerful language 💻";
-if(m.includes("loop")) return "Loop repeats 🔁";
-return "Interesting 🤔";
+
+if(m.includes("hi")||m.includes("hello")) return "Hello 👋 How can I help?";
+if(m.includes("c")) return "C is a powerful programming language 💻";
+if(m.includes("loop")) return "Loops repeat code 🔁 like for, while";
+if(m.includes("pointer")) return "Pointer stores memory address 📍";
+if(m.includes("bye")) return "Goodbye 👋";
+
+return "That's interesting 🤔 Tell me more!";
 }
 </script>
 
