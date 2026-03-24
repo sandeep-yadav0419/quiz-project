@@ -3,6 +3,7 @@
 <head>
 <title>AI Quiz Pro</title>
 <link rel="stylesheet" href="style.css">
+
 <style>
 body{
     background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
@@ -31,16 +32,19 @@ button{
     border-radius:10px;
     cursor:pointer;
     transition:0.3s;
+    background:#3b82f6;
+    color:white;
 }
 
 button:hover{transform:scale(1.05);}
 
-.option{background:#1f1f1f;color:white;}
+.option{background:#1f1f1f;}
 .option:hover{background:#333;}
 
 .correct{background:green !important;}
 .wrong{background:red !important;}
 
+/* CHAT */
 .chat{
     position:fixed;
     bottom:10px;
@@ -63,12 +67,27 @@ button:hover{transform:scale(1.05);}
     border-radius:5px;
 }
 
-.user{background:#007bff;}
+.user{background:#3b82f6;}
 .bot{background:#444;}
 
 input{
     width:70%;
-    padding:5px;
+    padding:6px;
+    border-radius:5px;
+    border:none;
+}
+
+/* typing animation */
+.typing span{
+    animation: blink 1.4s infinite;
+}
+
+.typing span:nth-child(2){animation-delay:0.2s;}
+.typing span:nth-child(3){animation-delay:0.4s;}
+
+@keyframes blink{
+    0%,80%,100%{opacity:0;}
+    40%{opacity:1;}
 }
 </style>
 </head>
@@ -192,46 +211,69 @@ let r=await fetch("/leaderboard");
 document.getElementById("lb").innerText=await r.text();
 }
 
-// CHATBOT (UPGRADED)
-function send(){
-let msg=document.getElementById("msg").value;
-if(!msg) return;
+/////////////////////////
+// 🤖 REAL CHATBOT
+/////////////////////////
 
-add(msg,"user");
-document.getElementById("msg").value="";
+const chatBox = document.getElementById("chat");
+const input = document.getElementById("msg");
 
-typing();
+// ENTER KEY
+input.addEventListener("keypress", function(e){
+    if(e.key === "Enter") send();
+});
 
-setTimeout(()=>{
-let reply=getReply(msg);
-add(reply,"bot");
-speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
-},1000);
+// SEND
+async function send(){
+    let msg = input.value.trim();
+    if(!msg) return;
+
+    addMessage(msg, "user");
+    input.value = "";
+
+    // typing
+    let typingDiv = document.createElement("div");
+    typingDiv.className = "msg bot";
+    typingDiv.innerHTML = `<span class="typing"><span>.</span><span>.</span><span>.</span></span>`;
+    chatBox.appendChild(typingDiv);
+    scrollDown();
+
+    try{
+        let res = await fetch("/chat", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ message: msg })
+        });
+
+        let data = await res.json();
+
+        typingDiv.remove();
+        addMessage(data.reply, "bot");
+
+        // voice
+        speechSynthesis.cancel();
+        let speech = new SpeechSynthesisUtterance(data.reply);
+        speechSynthesis.speak(speech);
+
+    }catch{
+        typingDiv.remove();
+        addMessage("Server error 😢", "bot");
+    }
 }
 
-function add(t,type){
-let d=document.createElement("div");
-d.className="msg "+type;
-d.innerText=t;
-document.getElementById("chat").appendChild(d);
+// ADD MESSAGE
+function addMessage(text, type){
+    let div = document.createElement("div");
+    div.className = "msg " + type;
+    div.innerText = text;
+
+    chatBox.appendChild(div);
+    scrollDown();
 }
 
-// typing animation
-function typing(){
-add("Typing...","bot");
-}
-
-// SMART REPLIES
-function getReply(m){
-m=m.toLowerCase();
-
-if(m.includes("hi")||m.includes("hello")) return "Hello 👋 How can I help?";
-if(m.includes("c")) return "C is a powerful programming language 💻";
-if(m.includes("loop")) return "Loops repeat code 🔁 like for, while";
-if(m.includes("pointer")) return "Pointer stores memory address 📍";
-if(m.includes("bye")) return "Goodbye 👋";
-
-return "That's interesting 🤔 Tell me more!";
+// SCROLL
+function scrollDown(){
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 </script>
 
