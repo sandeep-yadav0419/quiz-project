@@ -1,9 +1,9 @@
 const express = require("express");
 const fs = require("fs");
 
-// 🔥 fetch fix for Node (IMPORTANT)
+// ✅ fetch fix (important for Node)
 const fetch = (...args) =>
-    import('node-fetch').then(({ default: fetch }) => fetch(...args));
+  import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 app.use(express.json());
@@ -16,28 +16,26 @@ app.get("/", (req, res) => {
 app.get("/quiz", async (req, res) => {
 
     const level = req.query.level || "easy";
-    const count = req.query.count || 10;
+    const count = req.query.count || 5;
 
     const prompt = `
-Generate ${count} MCQ questions.
+Generate ${count} multiple choice questions.
 
-Return ONLY valid JSON:
+Return ONLY JSON like this:
 
-{
-  "questions": [
-    {
-      "q": "Question?",
-      "options": ["A","B","C","D"],
-      "answer": 0
-    }
-  ]
-}
+[
+  {
+    "q": "Question?",
+    "options": ["A","B","C","D"],
+    "answer": 0
+  }
+]
 
 Rules:
 - No explanation
-- No text
+- No text before or after
 - Only JSON
-- All questions must be unique
+- Make questions unique
 `;
 
     try {
@@ -51,19 +49,12 @@ Rules:
             body: JSON.stringify({
                 model: "gpt-4o-mini",
                 temperature: 0.9,
-
                 messages: [
-                    {
-                        role: "system",
-                        content: "You are a quiz generator. Always return valid JSON."
-                    },
                     {
                         role: "user",
                         content: prompt
                     }
-                ],
-
-                response_format: { type: "json_object" }
+                ]
             })
         });
 
@@ -71,30 +62,29 @@ Rules:
 
         const data = await response.json();
 
-        console.log("FULL RESPONSE:", JSON.stringify(data, null, 2));
+        console.log("RESPONSE:", JSON.stringify(data, null, 2));
 
         let text = data.choices?.[0]?.message?.content || "";
 
-        console.log("RAW AI:", text);
+        console.log("RAW TEXT:", text);
 
-        let questions = [];
+        let questions;
 
         try {
-            const parsed = JSON.parse(text);
-            questions = parsed.questions || parsed;
+            questions = JSON.parse(text);
         } catch (e) {
-            console.log("JSON ERROR:", text);
+            console.log("JSON ERROR");
 
             questions = [
                 {
-                    "q": "Fallback Question 1",
-                    "options": ["A", "B", "C", "D"],
-                    "answer": 0
+                    q: "Fallback Question 1",
+                    options: ["A", "B", "C", "D"],
+                    answer: 0
                 },
                 {
-                    "q": "Fallback Question 2",
-                    "options": ["A", "B", "C", "D"],
-                    "answer": 1
+                    q: "Fallback Question 2",
+                    options: ["A", "B", "C", "D"],
+                    answer: 1
                 }
             ];
         }
@@ -106,9 +96,9 @@ Rules:
 
         res.json([
             {
-                "q": "Server Error",
-                "options": ["A", "B", "C", "D"],
-                "answer": 0
+                q: "Server Error",
+                options: ["A", "B", "C", "D"],
+                answer: 0
             }
         ]);
     }
