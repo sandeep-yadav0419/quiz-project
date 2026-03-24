@@ -1,3 +1,18 @@
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+
+const app = express(); // 🔥 MOST IMPORTANT
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// HOME
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+// QUIZ API
 app.get("/quiz", (req, res) => {
     const level = req.query.level || "easy";
 
@@ -12,12 +27,12 @@ app.get("/quiz", (req, res) => {
 
     function shuffle(question) {
         const correct = question.options[question.answer];
-        let shuffledOptions = shuffleArray(question.options);
+        let shuffled = shuffleArray(question.options);
 
         return {
             q: question.q,
-            options: shuffledOptions,
-            answer: shuffledOptions.indexOf(correct)
+            options: shuffled,
+            answer: shuffled.indexOf(correct)
         };
     }
 
@@ -34,7 +49,6 @@ app.get("/quiz", (req, res) => {
             {q:"Main function?",options:["main()","start()","run()","init()"],answer:0},
             {q:"C is compiled?",options:["Yes","No","Maybe","None"],answer:0}
         ],
-
         medium: [
             {q:"Size of int?",options:["2","4","Depends","8"],answer:2},
             {q:"Pointer symbol?",options:["*","&","%","#"],answer:0},
@@ -47,7 +61,6 @@ app.get("/quiz", (req, res) => {
             {q:"Function?",options:["block","loop","array","none"],answer:0},
             {q:"Recursion?",options:["self call","loop","array","none"],answer:0}
         ],
-
         hard: [
             {q:"Dangling pointer?",options:["freed memory","null","valid","none"],answer:0},
             {q:"sizeof(char)?",options:["1","2","4","depends"],answer:0},
@@ -62,13 +75,28 @@ app.get("/quiz", (req, res) => {
         ]
     };
 
-    // 🔥 SAFE CHECK
-    if (!questions[level]) {
-        return res.json({ error: "Invalid level" });
-    }
-
-    // 🔥 PROPER SHUFFLE
     let finalQuestions = shuffleArray(questions[level]).map(q => shuffle(q));
 
     res.json(finalQuestions);
 });
+
+// SAVE SCORE
+app.post("/score", (req, res) => {
+    const { name, score } = req.body;
+    fs.appendFileSync("leaderboard.txt", `${name} - ${score}\n`);
+    res.send("saved");
+});
+
+// LEADERBOARD
+app.get("/leaderboard", (req, res) => {
+    try {
+        const data = fs.readFileSync("leaderboard.txt", "utf-8");
+        res.send(data || "No scores yet");
+    } catch {
+        res.send("No scores yet");
+    }
+});
+
+// START SERVER
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("🚀 Server running on port " + PORT));
