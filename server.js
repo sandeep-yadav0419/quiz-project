@@ -1,6 +1,10 @@
 const express = require("express");
 const fs = require("fs");
 
+// 🔥 fetch fix for Node (IMPORTANT)
+const fetch = (...args) =>
+    import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -17,7 +21,7 @@ app.get("/quiz", async (req, res) => {
     const prompt = `
 Generate ${count} MCQ questions.
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON:
 
 {
   "questions": [
@@ -31,9 +35,9 @@ Return ONLY valid JSON in this format:
 
 Rules:
 - No explanation
-- No markdown
+- No text
 - Only JSON
-- Questions must be different each time
+- All questions must be unique
 `;
 
     try {
@@ -59,12 +63,15 @@ Rules:
                     }
                 ],
 
-                // 🔥 MOST IMPORTANT FIX
                 response_format: { type: "json_object" }
             })
         });
 
+        console.log("STATUS:", response.status);
+
         const data = await response.json();
+
+        console.log("FULL RESPONSE:", JSON.stringify(data, null, 2));
 
         let text = data.choices?.[0]?.message?.content || "";
 
@@ -78,7 +85,6 @@ Rules:
         } catch (e) {
             console.log("JSON ERROR:", text);
 
-            // fallback
             questions = [
                 {
                     "q": "Fallback Question 1",
@@ -96,7 +102,7 @@ Rules:
         res.json(questions);
 
     } catch (err) {
-        console.log(err);
+        console.log("ERROR:", err);
 
         res.json([
             {
@@ -114,6 +120,5 @@ app.post("/score", (req, res) => {
     res.send("saved");
 });
 
-// 🔥 PORT FIX FOR RENDER
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Server running 🚀"));
