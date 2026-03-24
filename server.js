@@ -14,24 +14,28 @@ app.get("/quiz", async (req, res) => {
     const level = req.query.level || "easy";
     const count = req.query.count || 10;
 
-    // 🔥 RANDOM SEED (IMPORTANT)
-    const randomSeed = Math.floor(Math.random() * 100000);
+    const prompt = `
+Generate ${count} MCQ questions.
 
-const prompt = `
-Generate EXACTLY ${count} MCQ questions.
+Return ONLY valid JSON in this format:
 
-Return ONLY valid JSON array.
-Do NOT include any text, explanation, or markdown.
+{
+  "questions": [
+    {
+      "q": "Question?",
+      "options": ["A","B","C","D"],
+      "answer": 0
+    }
+  ]
+}
 
-STRICT FORMAT:
-[
-  {
-    "q": "Question?",
-    "options": ["A","B","C","D"],
-    "answer": 0
-  }
-]
+Rules:
+- No explanation
+- No markdown
+- Only JSON
+- Questions must be different each time
 `;
+
     try {
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -42,21 +46,21 @@ STRICT FORMAT:
             },
             body: JSON.stringify({
                 model: "gpt-4o-mini",
-
-                // 🔥 VERY IMPORTANT FOR RANDOMNESS
                 temperature: 0.9,
-                top_p: 1,
 
                 messages: [
                     {
                         role: "system",
-                        content: "You generate diverse and unique quiz questions."
+                        content: "You are a quiz generator. Always return valid JSON."
                     },
                     {
                         role: "user",
                         content: prompt
                     }
-                ]
+                ],
+
+                // 🔥 MOST IMPORTANT FIX
+                response_format: { type: "json_object" }
             })
         });
 
@@ -66,17 +70,13 @@ STRICT FORMAT:
 
         console.log("RAW AI:", text);
 
-        // 🔥 CLEAN OUTPUT
-        text = text.replace(/```json/g, "")
-                   .replace(/```/g, "")
-                   .trim();
-
-        let questions;
+        let questions = [];
 
         try {
-            questions = JSON.parse(text);
+            const parsed = JSON.parse(text);
+            questions = parsed.questions || parsed;
         } catch (e) {
-            console.log("Parse failed", e);
+            console.log("JSON ERROR:", text);
 
             // fallback
             questions = [
@@ -114,5 +114,6 @@ app.post("/score", (req, res) => {
     res.send("saved");
 });
 
+// 🔥 PORT FIX FOR RENDER
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Server running 🚀"));
