@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+<h2>Login</h2>
+<input id="name" placeholder="Enter name"><br><br>
+<button onclick="login()">Start</button>
+</div>
+
+<script>
+function login(){
+ let name=document.getElementById("name").value;
+ if(!name) return alert("Enter name");
+ localStorage.setItem("user",name);
+ window.location="quiz.html";
+}
+</script>
+
+</body>
+</html>
