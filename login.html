@@ -1,26 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login</title>
-<style>
-body{background:#0f172a;color:white;text-align:center;font-family:Arial;}
-input,button{padding:10px;margin:10px;border-radius:8px;}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>🔐 Login</h1>
-
-<input id="name" placeholder="Enter your name">
-<br>
-<button onclick="login()">Continue</button>
+<div class="container">
+<h2>Login</h2>
+<input id="name" placeholder="Enter name"><br><br>
+<button onclick="login()">Start</button>
+</div>
 
 <script>
 function login(){
-    let name=document.getElementById("name").value;
-    if(!name) return alert("Enter name");
-    localStorage.setItem("user",name);
-    window.location="quiz.html";
+ let name=document.getElementById("name").value;
+ if(!name) return alert("Enter name");
+ localStorage.setItem("user",name);
+ window.location="quiz.html";
 }
 </script>
 
