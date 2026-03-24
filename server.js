@@ -11,27 +11,24 @@ app.get("/", (req, res) => {
 
 app.get("/quiz", async (req, res) => {
 
-    const level = req.query.level || "easy";
     const count = req.query.count || 5;
 
-const prompt = `
-Generate ${count} UNIQUE MCQ questions.
+    const prompt = `
+Generate ${count} MCQ questions.
 
-Return ONLY JSON array. No explanation.
+Return ONLY JSON:
 
-Example:
 [
   {
-    "q": "What is 2+2?",
-    "options": ["1","2","3","4"],
-    "answer": 3
+    "q": "Question?",
+    "options": ["A","B","C","D"],
+    "answer": 0
   }
 ]
 `;
 
     try {
 
-        // 🔥 ALL INSIDE async function (FIXED)
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -42,44 +39,37 @@ Example:
                 model: "gpt-4o-mini",
                 temperature: 0.9,
                 messages: [
-                    {
-                        role: "user",
-                        content: prompt
-                    }
+                    { role: "user", content: prompt }
                 ]
             })
         });
 
         const data = await response.json();
 
-        console.log("STATUS:", response.status);
-
         let text = data.choices?.[0]?.message?.content || "";
 
         console.log("RAW:", text);
 
+        // ✅ CLEAN JSON
+        text = text.replace(/```json/g, "")
+                   .replace(/```/g, "")
+                   .trim();
+
         let questions;
 
         try {
-         text = text.replace(/```json/g, "")
-           .replace(/```/g, "")
-           .trim();
+            questions = JSON.parse(text);
+        } catch (e) {
+            console.log("JSON ERROR:", text);
 
-let questions;
-
-try {
-    questions = JSON.parse(text);
-} catch (e) {
-    console.log("JSON ERROR:", text);
-
-    questions = [
-        {
-            q: "Fallback Question 1",
-            options: ["A", "B", "C", "D"],
-            answer: 0
+            questions = [
+                {
+                    q: "Fallback Question",
+                    options: ["A", "B", "C", "D"],
+                    answer: 0
+                }
+            ];
         }
-    ];
-}
 
         res.json(questions);
 
@@ -100,7 +90,6 @@ app.post("/score", (req, res) => {
     const { name, score } = req.body;
     fs.appendFileSync("leaderboard.txt", `${name} - ${score}\n`);
     res.send("saved");
-    console.log("RAW:", text);
 });
 
 const PORT = process.env.PORT || 3000;
