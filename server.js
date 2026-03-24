@@ -60,18 +60,25 @@ Return ONLY JSON:
         let questions;
 
         try {
-            questions = JSON.parse(text);
-        } catch (e) {
-            console.log("JSON ERROR");
+         text = text.replace(/```json/g, "")
+           .replace(/```/g, "")
+           .trim();
 
-            questions = [
-                {
-                    q: "Fallback Question 1",
-                    options: ["A", "B", "C", "D"],
-                    answer: 0
-                }
-            ];
+let questions;
+
+try {
+    questions = JSON.parse(text);
+} catch (e) {
+    console.log("JSON ERROR:", text);
+
+    questions = [
+        {
+            q: "Fallback Question 1",
+            options: ["A", "B", "C", "D"],
+            answer: 0
         }
+    ];
+}
 
         res.json(questions);
 
