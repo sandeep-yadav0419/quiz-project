@@ -1,14 +1,23 @@
 app.get("/quiz", (req, res) => {
     const level = req.query.level || "easy";
 
+    function shuffleArray(arr) {
+        let a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
     function shuffle(question) {
         const correct = question.options[question.answer];
-        let shuffled = [...question.options].sort(() => Math.random() - 0.5);
+        let shuffledOptions = shuffleArray(question.options);
 
         return {
             q: question.q,
-            options: shuffled,
-            answer: shuffled.indexOf(correct)
+            options: shuffledOptions,
+            answer: shuffledOptions.indexOf(correct)
         };
     }
 
@@ -53,10 +62,13 @@ app.get("/quiz", (req, res) => {
         ]
     };
 
-    // 🔥 SHUFFLE + RANDOMIZE QUESTION ORDER ALSO
-    let finalQuestions = questions[level]
-        .sort(() => Math.random() - 0.5)   // question order random
-        .map(q => shuffle(q));             // options random
+    // 🔥 SAFE CHECK
+    if (!questions[level]) {
+        return res.json({ error: "Invalid level" });
+    }
+
+    // 🔥 PROPER SHUFFLE
+    let finalQuestions = shuffleArray(questions[level]).map(q => shuffle(q));
 
     res.json(finalQuestions);
 });
