@@ -1,40 +1,120 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leaderboard</title>
-    <link rel="stylesheet" href="style.css">
+<title>Leaderboard - AI Quiz Pro</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+/* TABLE */
+table{
+    width:100%;
+    border-collapse: collapse;
+    margin-top:10px;
+}
+
+th,td{
+    padding:10px;
+    text-align:center;
+}
+
+th{
+    background:#3b82f6;
+}
+
+tr:nth-child(even){
+    background: rgba(255,255,255,0.05);
+}
+
+/* HIGHLIGHT TOP */
+.top{
+    background: rgba(34,197,94,0.2);
+    font-weight:bold;
+}
+
+/* BUTTON */
+button{
+    width:100%;
+    margin-top:10px;
+}
+</style>
+
 </head>
 <body>
 
 <div class="container">
     <h2>🏆 Leaderboard</h2>
 
-    <pre id="data">Loading...</pre>
+    <table id="table">
+        <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Score</th>
+        </tr>
+    </table>
 
-    <br>
     <button onclick="goBack()">⬅ Back to Quiz</button>
 </div>
 
 <script>
-// load leaderboard
+
+// LOAD + SORT LEADERBOARD
 async function loadLeaderboard(){
     try {
         let res = await fetch("/leaderboard");
         let text = await res.text();
 
-        document.getElementById("data").innerText = text || "No scores yet";
+        if(!text){
+            document.getElementById("table").innerHTML += "<tr><td colspan='3'>No scores yet</td></tr>";
+            return;
+        }
+
+        let lines = text.trim().split("\n");
+
+        // convert to objects
+        let data = lines.map(l=>{
+            let [name,score] = l.split(" - ");
+            return {name, score: parseInt(score)};
+        });
+
+        // 🔥 sort highest first
+        data.sort((a,b)=>b.score - a.score);
+
+        let table = document.getElementById("table");
+
+        data.forEach((d,i)=>{
+            let row = document.createElement("tr");
+
+            if(i === 0) row.classList.add("top"); // highlight winner
+
+            row.innerHTML = `
+                <td>${i+1}</td>
+                <td>${d.name}</td>
+                <td>${d.score}</td>
+            `;
+
+            table.appendChild(row);
+        });
+
     } catch (err) {
-        document.getElementById("data").innerText = "Error loading leaderboard";
+        document.getElementById("table").innerHTML += "<tr><td colspan='3'>Error loading</td></tr>";
     }
 }
 
-// back button
+// BACK BUTTON
 function goBack(){
     window.location = "quiz.html";
 }
 
-// auto load
+// AUTO LOAD
 loadLeaderboard();
+
 </script>
 
 </body>
