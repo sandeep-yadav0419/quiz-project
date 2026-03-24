@@ -17,23 +17,13 @@ app.get("/quiz", async (req, res) => {
     // 🔥 RANDOM SEED (IMPORTANT)
     const randomSeed = Math.floor(Math.random() * 100000);
 
-    const prompt = `
-You are a quiz generator.
-
-Seed: ${randomSeed}
-
+const prompt = `
 Generate EXACTLY ${count} MCQ questions.
-Difficulty: ${level}
 
-IMPORTANT RULES:
-- Questions must be completely UNIQUE every time
-- Do NOT repeat questions from previous outputs
-- Change topics, wording, and structure every time
-- Avoid using the same examples
-- Make questions diverse and unpredictable
+Return ONLY valid JSON array.
+Do NOT include any text, explanation, or markdown.
 
-Return ONLY JSON (no explanation, no text):
-
+STRICT FORMAT:
 [
   {
     "q": "Question?",
@@ -42,7 +32,6 @@ Return ONLY JSON (no explanation, no text):
   }
 ]
 `;
-
     try {
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
