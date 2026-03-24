@@ -1,108 +1,164 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>AI Quiz 🔥</title>
+<title>AI Quiz Pro 🔥</title>
+
+<style>
+body{
+background:linear-gradient(135deg,#1d2671,#c33764);
+font-family:sans-serif;
+text-align:center;
+color:white;
+}
+
+.box{
+margin-top:80px;
+background:rgba(0,0,0,0.6);
+padding:30px;
+border-radius:15px;
+width:400px;
+margin:auto;
+box-shadow:0 0 20px black;
+}
+
+button{
+padding:10px 20px;
+margin:5px;
+border:none;
+border-radius:10px;
+background:#00c6ff;
+color:white;
+cursor:pointer;
+}
+
+button:hover{background:#0072ff;}
+
+.progress{
+height:10px;
+background:#444;
+margin:10px;
+border-radius:10px;
+}
+
+.bar{
+height:10px;
+background:#00ff99;
+width:0%;
+border-radius:10px;
+}
+</style>
+
 </head>
 
-<body style="background:#141e30;color:white;text-align:center;">
+<body>
 
-<h1>🔥 AI Quiz</h1>
+<div class="box">
 
-<input id="name" placeholder="Enter Name">
-<button onclick="start()">Start</button>
+<h2>🎮 AI Quiz</h2>
+
+<input id="name" placeholder="Enter Name"><br>
+
+<select id="level">
+<option value="easy">Easy</option>
+<option value="medium">Medium</option>
+<option value="hard">Hard</option>
+</select><br>
+
+<button onclick="start()">Start 🚀</button>
+
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+<h3 id="timer"></h3>
 
 <div id="quiz"></div>
 
+</div>
+
+<audio id="clickSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+
 <script>
 
-let questions = [];
-let i = 0;
-let score = 0;
-let name = "";
+let questions=[],i=0,score=0,name="",timer;
 
 async function start(){
 
-    console.log("Start clicked");
+name=document.getElementById("name").value;
+let level=document.getElementById("level").value;
 
-    name = document.getElementById("name").value;
+if(name==""){alert("Enter name");return;}
 
-    if(name==""){
-        alert("Enter name bro 😅");
-        return;
-    }
+let res=await fetch(`/quiz?level=${level}`);
+questions=await res.json();
 
-    try {
+i=0;score=0;
 
-        let res = await fetch("/quiz");
-        let data = await res.json();
-
-        console.log("API DATA:", data);
-
-        // 🔥 IMPORTANT FIX
-        if(!data || data.length === 0){
-            alert("Questions load nahi hue 😭");
-            return;
-        }
-
-        questions = data;
-
-        i = 0;
-        score = 0;
-
-        show();
-
-    } catch(err){
-        alert("Server error 😭");
-        console.log(err);
-    }
+show();
 }
 
 function show(){
 
-    // 🔥 SAFETY CHECK
-    if(!questions[i]){
-        document.getElementById("quiz").innerHTML = "No questions 😭";
-        return;
-    }
+document.getElementById("bar").style.width = ((i/10)*100)+"%";
 
-    let q = questions[i];
+let q=questions[i];
 
-    let html = `<h3>${q.q}</h3>`;
+let html=`<h3>Q${i+1}: ${q.q}</h3>`;
 
-    q.options.forEach((o,idx)=>{
-        html += `<button onclick="ans(${idx+1})">${o}</button><br>`;
-    });
+q.options.forEach((o,idx)=>{
+html+=`<button onclick="ans(${idx+1})">${o}</button><br>`;
+});
 
-    document.getElementById("quiz").innerHTML = html;
+document.getElementById("quiz").innerHTML=html;
+
+startTimer();
 }
 
 function ans(a){
 
-    if(a == questions[i].answer) score++;
+document.getElementById("clickSound").play();
 
-    i++;
+clearInterval(timer);
 
-    if(i < questions.length){
-        show();
-    } else {
-        finish();
-    }
+if(a==questions[i].answer) score++;
+
+i++;
+
+if(i<questions.length){
+show();
+}else{
+finish();
+}
 }
 
-async function finish(){
+function startTimer(){
 
-    document.getElementById("quiz").innerHTML = "<h2>Score: " + score + "</h2>";
+let t=10;
+document.getElementById("timer").innerText="⏳ "+t;
 
-    await fetch("/score",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({name,score})
-    });
+timer=setInterval(()=>{
+t--;
+document.getElementById("timer").innerText="⏳ "+t;
+
+if(t==0){
+clearInterval(timer);
+i++;
+show();
+}
+},1000);
+}
+
+function finish(){
+
+document.getElementById("quiz").innerHTML=
+`<h2>🏆 Score: ${score}/10</h2>`;
+
+fetch("/score",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name,score})
+});
 }
 
 </script>
-
-<a href="leaderboard.html">🏆 Leaderboard</a>
 
 </body>
 </html>
