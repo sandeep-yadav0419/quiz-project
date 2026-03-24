@@ -1,9 +1,6 @@
 const express = require("express");
 const fs = require("fs");
 
-// ✅ fetch fix (important for Node)
-const response = await fetch("https://api.openai.com/v1/chat/completions", {
-
 const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -18,9 +15,9 @@ app.get("/quiz", async (req, res) => {
     const count = req.query.count || 5;
 
     const prompt = `
-Generate ${count} multiple choice questions.
+Generate ${count} MCQ questions.
 
-Return ONLY JSON like this:
+Return ONLY JSON:
 
 [
   {
@@ -29,16 +26,11 @@ Return ONLY JSON like this:
     "answer": 0
   }
 ]
-
-Rules:
-- No explanation
-- No text before or after
-- Only JSON
-- Make questions unique
 `;
 
     try {
 
+        // 🔥 ALL INSIDE async function (FIXED)
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -57,15 +49,13 @@ Rules:
             })
         });
 
-        console.log("STATUS:", response.status);
-
         const data = await response.json();
 
-        console.log("RESPONSE:", JSON.stringify(data, null, 2));
+        console.log("STATUS:", response.status);
 
         let text = data.choices?.[0]?.message?.content || "";
 
-        console.log("RAW TEXT:", text);
+        console.log("RAW:", text);
 
         let questions;
 
@@ -79,11 +69,6 @@ Rules:
                     q: "Fallback Question 1",
                     options: ["A", "B", "C", "D"],
                     answer: 0
-                },
-                {
-                    q: "Fallback Question 2",
-                    options: ["A", "B", "C", "D"],
-                    answer: 1
                 }
             ];
         }
